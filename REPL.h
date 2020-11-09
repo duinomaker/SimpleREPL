@@ -12,8 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include "Utilities.h"
-
 #ifndef _LIBCPP_FUNC_VIS
 #define _LIBCPP_FUNC_VIS __attribute__ ((__visibility__("default")))
 #endif
@@ -42,7 +40,7 @@ namespace simple_repl {
 
         template<typename ...Args>
         void put(const Args &...args) {
-            put<const std::string &>(utilities::join_to_string(args...));
+            put<const std::string &>(join_to_string(args...));
         }
 
         template<>
@@ -74,6 +72,21 @@ namespace simple_repl {
         std::ostream &out;
         bool requesting_input;
         bool is_closed;
+
+        static void join_to_string_impl(const std::ostringstream &oss) {}
+
+        template<typename T, typename ...Ts>
+        static void join_to_string_impl(std::ostringstream &oss, const T &val, const Ts &...args) {
+            oss << val;
+            join_to_string_impl(oss, args...);
+        }
+
+        template<typename ...Args>
+        static std::string join_to_string(const Args &...args) {
+            std::ostringstream oss;
+            join_to_string_impl(oss, args...);
+            return std::move(oss.str());
+        }
     };
 
     std::vector<std::string> unpack_commands(const std::string &str);

@@ -3,12 +3,15 @@
 
 #include <exception>
 #include <functional>
+#include <initializer_list>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <sstream>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -62,7 +65,8 @@ namespace simple_repl {
             is_closed = true;
         }
 
-        [[nodiscard]] inline bool closed() const {
+        [[nodiscard]]
+        inline bool closed() const {
             return is_closed || in.eof();
         }
 
@@ -89,7 +93,35 @@ namespace simple_repl {
         }
     };
 
-    std::vector<std::string> unpack_commands(const std::string &str);
+    class Dispatcher {
+    public:
+        Dispatcher(const std::initializer_list<std::pair<const std::pair<std::string, std::size_t>,
+                std::function<void(const std::vector<std::string> &)>>> &il)
+                : workers(il) {
+            if (workers.find({"UNKNOWN", 0}) == workers.cend())
+                throw std::runtime_error("an `UNKNOWN` action with no parameter wasn't given");
+        }
+
+        [[nodiscard]]
+        auto generate() const {
+            return [this](const std::vector<std::string> &commands) {
+                if (commands.empty())
+                    return;
+                std::string action = commands[0];
+                auto iter = workers.find({action, commands.size() - 1});
+                if (iter == workers.cend()) {
+                    workers.at({"UNKNOWN", 0})({});
+                    return;
+                }
+                std::vector<std::string> args(++commands.cbegin(), commands.cend());
+                iter->second(args);
+            };
+        }
+
+    private:
+        std::map<const std::pair<std::string, std::size_t>,
+                std::function<void(const std::vector<std::string> &)>> workers;
+    };
 
     class WaitHandler {
     public:
@@ -103,6 +135,8 @@ namespace simple_repl {
     private:
         std::unique_ptr<std::thread> thread;
     };
+
+    std::vector<std::string> unpack_commands(const std::string &str);
 
     WaitHandler register_repl_service(
             const std::function<void(const std::vector<std::string>)> &command_dispatcher);

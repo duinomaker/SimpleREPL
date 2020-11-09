@@ -14,7 +14,7 @@ int main() {
 }
 ```
 
-## Register as a Service
+## Register as a Service ...
 
 ``` c++
 #include <string>
@@ -49,5 +49,23 @@ int main() {
     handler.wait();
 
     // Try typing `say "Hello, world"`, and `exit`.
+}
+```
+
+## ... and Using a Dispatcher
+
+``` c++
+#include "REPL.h"
+
+using simple_repl::repl;
+using simple_repl::register_repl_service;
+using simple_repl::Dispatcher;
+
+int main() {
+    Dispatcher dispatcher({{{"say",     1}, [](auto args) { repl.put(args[0]); }},
+                           {{"exit",    0}, [](auto args) { repl.close(); }},
+                           {{"UNKNOWN", 0}, [](auto args) { repl.put("[ERROR] Unknown action"); }}});
+    auto handler = register_repl_service(dispatcher.generate());
+    handler.wait();
 }
 ```

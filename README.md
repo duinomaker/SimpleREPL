@@ -45,8 +45,8 @@ void dispatcher(const std::vector<std::string> &commands) {
 }
 
 int main() {
-    auto thread = register_repl_service(dispatcher);
-    thread->join();
+    auto handler = register_repl_service(dispatcher);
+    handler.wait();
 
     // Try typing `say "Hello, world"`, and `exit`.
 }

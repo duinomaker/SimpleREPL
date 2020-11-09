@@ -44,7 +44,7 @@ namespace simple_repl {
         return std::move(arguments);
     }
 
-    std::unique_ptr<std::thread> register_repl_service(
+    WaitHandler register_repl_service(
             const std::function<void(const std::vector<std::string>)> &dispatcher) {
         static bool registered = false;
         static auto thread = std::make_unique<std::thread>([&dispatcher] {
@@ -57,7 +57,7 @@ namespace simple_repl {
         if (registered)
             throw std::runtime_error("REPL service registered twice");
         registered = true;
-        return std::move(thread);
+        return WaitHandler(std::move(thread));
     }
 
 }

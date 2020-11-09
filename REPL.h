@@ -78,7 +78,20 @@ namespace simple_repl {
 
     std::vector<std::string> unpack_commands(const std::string &str);
 
-    std::unique_ptr<std::thread> register_repl_service(
+    class WaitHandler {
+    public:
+        explicit WaitHandler(std::unique_ptr<std::thread> thread)
+                : thread(std::move(thread)) {}
+
+        void wait() {
+            thread->join();
+        }
+
+    private:
+        std::unique_ptr<std::thread> thread;
+    };
+
+    WaitHandler register_repl_service(
             const std::function<void(const std::vector<std::string>)> &command_dispatcher);
 
     extern _LIBCPP_FUNC_VIS REPL repl;

@@ -1,6 +1,6 @@
 # SimpleREPL
 
-A simple REPL service I created for a program to interact with users.
+A simple REPL module I created for the Programming Week.
 
 ## Basic Usage
 
@@ -10,7 +10,7 @@ A simple REPL service I created for a program to interact with users.
 using simple_repl::repl;
 
 int main() {
-    repl.put(12, "34", '5', 6.0); // Displays `123456`.
+    repl.put(12, "34", '5'); // Prints `12345`.
 }
 ```
 
@@ -40,7 +40,7 @@ void dispatcher(const std::vector<std::string> &commands) {
             repl.put("nothing to say");
         }
     } else {
-        repl.put("Invalid action: `", action, "`");
+        repl.put("[ERROR] Unknown action");
     }
 }
 
@@ -48,11 +48,13 @@ int main() {
     auto handler = register_repl_service(dispatcher);
     handler.wait();
 
-    // Try typing `say "Hello, world"`, and `exit`.
+    // You can also quote parts of the input. Try typing `say "Hello, world"`.
 }
 ```
 
-## ... and Using a Dispatcher
+## ... with a Dispatcher
+
+The dispatcher needs to know name of each action and the number of arguments they require. The following example implements the same functionality as above.
 
 ``` c++
 #include "REPL.h"
@@ -63,9 +65,10 @@ using simple_repl::Dispatcher;
 
 int main() {
     Dispatcher dispatcher({{{"say",     1}, [](auto args) { repl.put(args[0]); }},
-                           {{"exit",    0}, [](auto args) { repl.close(); }},
+                           {{"say",     0}, [](auto args) { repl.put("nothing to say"); }},
+                           {{"exit",    0}, [](auto args) { repl.put("bye"), repl.close(); }},
                            {{"UNKNOWN", 0}, [](auto args) { repl.put("[ERROR] Unknown action"); }}});
-    auto handler = register_repl_service(dispatcher.generate());
+    auto handler = register_repl_service(dispatcher);
     handler.wait();
 }
 ```

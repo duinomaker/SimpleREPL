@@ -41,15 +41,15 @@ namespace simple_repl {
             }
             search_begin = sm.suffix().first;
         }
-        return std::move(arguments);
+        return arguments;
     }
 
     WaitHandler register_repl_service(
-            const std::function<void(const std::vector<std::string>)> &dispatcher) {
+            std::function<void(const std::vector<std::string> &)> dispatcher) {
         static bool registered = false;
-        static auto thread = std::make_unique<std::thread>([&dispatcher] {
+        static auto thread = std::make_unique<std::thread>([dispatcher = std::move(dispatcher)] {
             while (!repl.closed()) {
-                std::string line(std::move(repl.read_line()));
+                std::string line(repl.read_line());
                 std::vector<std::string> arguments = unpack_arguments(line);
                 dispatcher(arguments);
             }

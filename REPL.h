@@ -5,7 +5,6 @@
 #include <functional>
 #include <initializer_list>
 #include <iostream>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <sstream>
@@ -14,6 +13,8 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include "HashHelper.h"
 
 #ifndef _LIBCPP_FUNC_VIS
 #define _LIBCPP_FUNC_VIS __attribute__ ((__visibility__("default")))
@@ -38,7 +39,7 @@ namespace simple_repl {
             mtx.lock();
             requesting_input = false;
             mtx.unlock();
-            return std::move(line);
+            return line;
         }
 
         template<typename ...Args>
@@ -89,38 +90,35 @@ namespace simple_repl {
         static std::string join_to_string(const Args &...args) {
             std::ostringstream oss;
             join_to_string_impl(oss, args...);
-            return std::move(oss.str());
+            return oss.str();
         }
     };
 
     class Dispatcher {
     public:
         Dispatcher(const std::initializer_list<std::pair<const std::pair<std::string, std::size_t>,
-                std::function<void(const std::vector<std::string> &)>>> &il)
+                const std::function<void(const std::vector<std::string> &)>>> &il)
                 : workers(il) {
             if (workers.find({"UNKNOWN", 0}) == workers.cend())
                 throw std::runtime_error("an `UNKNOWN` action with no parameter wasn't given");
         }
 
-        [[nodiscard]]
-        auto generate() const {
-            return [this](const std::vector<std::string> &commands) {
-                if (commands.empty())
-                    return;
-                std::string action = commands[0];
-                auto iter = workers.find({action, commands.size() - 1});
-                if (iter == workers.cend()) {
-                    workers.at({"UNKNOWN", 0})({});
-                    return;
-                }
-                std::vector<std::string> args(++commands.cbegin(), commands.cend());
-                iter->second(args);
-            };
+        void operator()(const std::vector<std::string> &commands) const {
+            if (commands.empty())
+                return;
+            std::string action = commands[0];
+            auto iter = workers.find({action, commands.size() - 1});
+            if (iter == workers.cend()) {
+                workers.at({"UNKNOWN", 0})({});
+                return;
+            }
+            std::vector<std::string> args(++commands.cbegin(), commands.cend());
+            iter->second(args);
         }
 
     private:
-        std::map<const std::pair<std::string, std::size_t>,
-                std::function<void(const std::vector<std::string> &)>> workers;
+        std::unordered_map<const std::pair<std::string, std::size_t>,
+                const std::function<void(const std::vector<std::string> &)>> workers;
     };
 
     class WaitHandler {
@@ -139,7 +137,7 @@ namespace simple_repl {
     std::vector<std::string> unpack_commands(const std::string &str);
 
     WaitHandler register_repl_service(
-            const std::function<void(const std::vector<std::string>)> &command_dispatcher);
+            std::function<void(const std::vector<std::string> &)> command_dispatcher);
 
     extern _LIBCPP_FUNC_VIS REPL repl;
 

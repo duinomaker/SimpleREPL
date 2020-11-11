@@ -1,5 +1,5 @@
-#ifndef LABRESV_REPL_H
-#define LABRESV_REPL_H
+#ifndef REPL_H
+#define REPL_H
 
 #include <exception>
 #include <functional>
@@ -24,23 +24,14 @@ namespace simple_repl {
 
     class REPL {
     public:
-        explicit REPL(std::istream &in = std::cin, std::ostream &out = std::cout)
-                : in(in), out(out), requesting_input(false), is_closed(false) {}
+        explicit REPL(std::istream &in = std::cin,
+                      std::ostream &out = std::cout,
+                      std::ostream &log = std::clog)
+                : m_in(in), m_out(out), m_log(log), requesting_input(false), is_closed(false) {}
 
-        std::string read_line() {
-            if (closed())
-                throw std::runtime_error("requesting from a closed REPL");
-            std::string line;
-            mtx.lock();
-            requesting_input = true;
-            out << ">> " << std::flush;
-            mtx.unlock();
-            getline(in, line);
-            mtx.lock();
-            requesting_input = false;
-            mtx.unlock();
-            return line;
-        }
+        std::string read_line();
+
+        std::string read_line_no_interrupt();
 
         template<typename ...Args>
         void put(const Args &...args) {
@@ -52,12 +43,26 @@ namespace simple_repl {
             if (closed())
                 throw std::runtime_error("putting to a closed REPL");
             mtx.lock();
+            m_out << val << std::endl;
+            mtx.unlock();
+        }
+
+        template<typename ...Args>
+        void log(const Args &...args) {
+            log<const std::string &>(join_to_string(args...));
+        }
+
+        template<>
+        void log<const std::string &>(const std::string &val) {
+            if (closed())
+                throw std::runtime_error("putting to a closed REPL");
+            mtx.lock();
             if (requesting_input) {
-                out << " (input interrupted)\n"
-                    << val
-                    << "\n>> " << std::flush;
+                m_log << " (input interrupted)\n"
+                      << val
+                      << "\n>> " << std::flush;
             } else {
-                out << val << std::endl;
+                m_log << val << std::endl;
             }
             mtx.unlock();
         }
@@ -68,13 +73,14 @@ namespace simple_repl {
 
         [[nodiscard]]
         inline bool closed() const {
-            return is_closed || in.eof();
+            return is_closed || m_in.eof();
         }
 
     private:
         std::mutex mtx;
-        std::istream &in;
-        std::ostream &out;
+        std::istream &m_in;
+        std::ostream &m_out;
+        std::ostream &m_log;
         bool requesting_input;
         bool is_closed;
 
@@ -97,24 +103,9 @@ namespace simple_repl {
     class Dispatcher {
     public:
         Dispatcher(const std::initializer_list<std::pair<const std::pair<std::string, std::size_t>,
-                const std::function<void(const std::vector<std::string> &)>>> &il)
-                : workers(il) {
-            if (workers.find({"UNKNOWN", 0}) == workers.cend())
-                throw std::runtime_error("an `UNKNOWN` action with no parameter wasn't given");
-        }
+                const std::function<void(const std::vector<std::string> &)>>> &il);
 
-        void operator()(const std::vector<std::string> &commands) const {
-            if (commands.empty())
-                return;
-            std::string action = commands[0];
-            auto iter = workers.find({action, commands.size() - 1});
-            if (iter == workers.cend()) {
-                workers.at({"UNKNOWN", 0})({});
-                return;
-            }
-            std::vector<std::string> args(++commands.cbegin(), commands.cend());
-            iter->second(args);
-        }
+        void operator()(const std::vector<std::string> &commands) const;
 
     private:
         std::unordered_map<const std::pair<std::string, std::size_t>,
@@ -134,13 +125,16 @@ namespace simple_repl {
         std::unique_ptr<std::thread> thread;
     };
 
+    bool check_format(const std::string &str);
+
     std::vector<std::string> unpack_commands(const std::string &str);
 
     WaitHandler register_repl_service(
-            std::function<void(const std::vector<std::string> &)> command_dispatcher);
+            std::function<void(const std::vector<std::string> &)> command_dispatcher,
+            bool no_interrupt = false);
 
     extern _LIBCPP_FUNC_VIS REPL repl;
 
 }
 
-#endif //LABRESV_REPL_H
+#endif //REPL_H

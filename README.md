@@ -30,17 +30,17 @@ void dispatcher(const std::vector<std::string> &commands) {
         return;
     std::string action = commands[0];
     if (action == "exit") {
-        repl.put("bye");
+        repl.log("bye");
         // Close the REPL service, it will close the thread.
         repl.close();
-    } else if (action == "say") {
-        if (commands.size() > 1) {
-            repl.put(commands[1]);
+    } else if (action == "say" && commands.size() < 2) {
+        if (commands.size() == 1) {
+            repl.log(commands[1]);
         } else {
-            repl.put("nothing to say");
+            repl.log("nothing to say");
         }
     } else {
-        repl.put("[ERROR] Unknown action");
+        repl.log("[ERROR] Unknown action");
     }
 }
 
@@ -64,10 +64,10 @@ using simple_repl::register_repl_service;
 using simple_repl::Dispatcher;
 
 int main() {
-    Dispatcher dispatcher({{{"say",     1}, [](auto args) { repl.put(args[0]); }},
-                           {{"say",     0}, [](auto args) { repl.put("nothing to say"); }},
-                           {{"exit",    0}, [](auto args) { repl.put("bye"), repl.close(); }},
-                           {{"UNKNOWN", 0}, [](auto args) { repl.put("[ERROR] Unknown action"); }}});
+    Dispatcher dispatcher({{{"say",     1}, [](auto args) { repl.log(args[0]); }},
+                           {{"say",     0}, [](auto args) { repl.log("nothing to say"); }},
+                           {{"exit",    0}, [](auto args) { repl.log("bye"), repl.close(); }},
+                           {{"UNKNOWN", 0}, [](auto args) { repl.log("[ERROR] Unknown action"); }}});
     auto handler = register_repl_service(dispatcher);
     handler.wait();
 }

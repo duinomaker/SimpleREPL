@@ -21,6 +21,7 @@ namespace simple_repl {
         std::string line;
         mtx.lock();
         requesting_input = true;
+        m_log << ">> " << std::flush;
         mtx.unlock();
         std::getline(m_in, line);
         mtx.lock();
@@ -34,13 +35,14 @@ namespace simple_repl {
             throw std::runtime_error("requesting from a closed REPL");
         std::string line;
         mtx.lock();
+        m_log << ">> " << std::flush;
         std::getline(m_in, line);
         mtx.unlock();
         return line;
     }
 
     Dispatcher::Dispatcher(const std::initializer_list<std::pair<const std::pair<std::string, std::size_t>,
-            const std::function<void(const std::vector<std::string> &)>>> &il)
+            const std::function<void(const std::vector<std::string> &)> &>> &il)
             : workers(il) {
         if (workers.find({"UNKNOWN", 0}) == workers.cend())
             throw std::runtime_error("an `UNKNOWN` action with no parameter wasn't given");
@@ -62,6 +64,8 @@ namespace simple_repl {
     // The number of unescaped quotes must be even; space(s) must be present
     // between two pieces of quoted text.
     bool check_format(const std::string &str) {
+        if (str.empty())
+            return true;
         std::size_t length = str.length();
         std::size_t count = 0;
         if (str[0] == '"')
@@ -78,6 +82,8 @@ namespace simple_repl {
     }
 
     std::vector<std::string> unpack_arguments(const std::string &str) {
+        if (str.empty())
+            return {};
         std::vector<std::string> arguments;
         std::smatch sm;
         std::string matched;

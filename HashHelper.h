@@ -30,7 +30,6 @@ namespace std {
     template<typename T1, typename T2>
     struct hash<const pair <T1, T2>> {
         size_t operator()(const pair <T1, T2> &p) const {
-            std::size_t seed = 19;
             return hash_helper::hash_code(p.first, p.second);
         }
     };

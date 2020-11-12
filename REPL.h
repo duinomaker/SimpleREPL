@@ -87,7 +87,8 @@ namespace simple_repl {
         static void join_to_string_impl(const std::ostringstream &oss) {}
 
         template<typename T, typename ...Ts>
-        static void join_to_string_impl(std::ostringstream &oss, const T &val, const Ts &...args) {
+        static void join_to_string_impl(std::ostringstream &oss,
+                                        const T &val, const Ts &...args) {
             oss << val;
             join_to_string_impl(oss, args...);
         }
@@ -103,13 +104,13 @@ namespace simple_repl {
     class Dispatcher {
     public:
         Dispatcher(const std::initializer_list<std::pair<const std::pair<std::string, std::size_t>,
-                const std::function<void(const std::vector<std::string> &)>>> &il);
+                const std::function<void(const std::vector<std::string> &)> &>> &il);
 
         void operator()(const std::vector<std::string> &commands) const;
 
     private:
         std::unordered_map<const std::pair<std::string, std::size_t>,
-                const std::function<void(const std::vector<std::string> &)>> workers;
+                const std::function<void(const std::vector<std::string> &)> &> workers;
     };
 
     class WaitHandler {
@@ -117,7 +118,7 @@ namespace simple_repl {
         explicit WaitHandler(std::unique_ptr<std::thread> thread)
                 : thread(std::move(thread)) {}
 
-        void wait() {
+        inline void wait() const {
             thread->join();
         }
 

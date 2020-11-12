@@ -104,13 +104,13 @@ namespace simple_repl {
     class Dispatcher {
     public:
         Dispatcher(const std::initializer_list<std::pair<const std::pair<std::string, std::size_t>,
-                const std::function<void(const std::vector<std::string> &)> &>> &il);
+                const std::function<void(const std::vector<std::string> &)>>> &il);
 
         void operator()(const std::vector<std::string> &commands) const;
 
     private:
         std::unordered_map<const std::pair<std::string, std::size_t>,
-                const std::function<void(const std::vector<std::string> &)> &> workers;
+                const std::function<void(const std::vector<std::string> &)>> workers;
     };
 
     class WaitHandler {

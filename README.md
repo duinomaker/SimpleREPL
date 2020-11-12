@@ -66,7 +66,7 @@ using simple_repl::Dispatcher;
 int main() {
     Dispatcher dispatcher({{{"say",     1}, [](auto args) { repl.log(args[0]); }},
                            {{"say",     0}, [](auto args) { repl.log("nothing to say"); }},
-                           {{"exit",    0}, [](auto args) { repl.log("bye"), repl.close(); }},
+                           {{"exit",    0}, [](auto args) { repl.log("bye"); repl.close(); }},
                            {{"UNKNOWN", 0}, [](auto args) { repl.log("[ERROR] Unknown action"); }}});
     auto handler = register_repl_service(dispatcher);
     handler.wait();

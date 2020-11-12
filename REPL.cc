@@ -42,7 +42,7 @@ namespace simple_repl {
     }
 
     Dispatcher::Dispatcher(const std::initializer_list<std::pair<const std::pair<std::string, std::size_t>,
-            const std::function<void(const std::vector<std::string> &)> &>> &il)
+            const std::function<void(const std::vector<std::string> &)>>> &il)
             : workers(il) {
         if (workers.find({"UNKNOWN", 0}) == workers.cend())
             throw std::runtime_error("an `UNKNOWN` action with no parameter wasn't given");
